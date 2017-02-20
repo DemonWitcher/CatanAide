@@ -10,3 +10,4 @@
 欢迎更多建议.  
 ![](https://github.com/DemonWitcher/CatanAide/raw/master/art/art1.png)  
 ![](https://github.com/DemonWitcher/CatanAide/raw/master/art/art2.png)
+![](https://github.com/DemonWitcher/CatanAide/raw/master/art/art3.png)

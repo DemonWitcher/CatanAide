@@ -92,13 +92,13 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         mLineChart.setDrawGridBackground(false);
         mLineChart.setHighlightPerDragEnabled(true);
         mLineChart.setPinchZoom(true);
-        mLineChart.setBackgroundColor(Color.LTGRAY);
+        mLineChart.setBackgroundColor(Color.WHITE);
         mLineChart.animateX(2500);
         Legend l = mLineChart.getLegend();
         l.setForm(Legend.LegendForm.LINE);
         l.setTypeface(mTfLight);
         l.setTextSize(11f);
-        l.setTextColor(Color.WHITE);
+        l.setTextColor(Color.BLACK);
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
         l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
@@ -107,7 +107,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         XAxis xAxis = mLineChart.getXAxis();
         xAxis.setTypeface(mTfLight);
         xAxis.setTextSize(11f);
-        xAxis.setTextColor(Color.WHITE);
+        xAxis.setTextColor(Color.BLACK);
 //        xAxis.setLabelCount(0);
         xAxis.setValueFormatter(new IAxisValueFormatter() {
             @Override
@@ -141,7 +141,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         }
 //        mLineChart.getXAxis().setLabelCount(mListNumbers.size());
         LineDataSet set1;
-        if (mLineChart.getData() != null && mLineChart.getData().getDataSetCount() > 0) {
+        if (mLineChart.getData() != null && mLineChart.getData().getDataSetCount() > 0&&mListNumbers.size()>0) {
             set1 = (LineDataSet) mLineChart.getData().getDataSetByIndex(0);
             set1.setValues(yVals1);
             mLineChart.getData().notifyDataChanged();
@@ -156,7 +156,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             });
             set1.setAxisDependency(YAxis.AxisDependency.LEFT);
             set1.setColor(ColorTemplate.getHoloBlue());
-            set1.setCircleColor(Color.WHITE);
+            set1.setCircleColor(Color.BLACK);
             set1.setLineWidth(2f);
             set1.setCircleRadius(3f);
             set1.setFillAlpha(65);
@@ -164,7 +164,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             set1.setHighLightColor(Color.rgb(244, 117, 117));
             set1.setDrawCircleHole(false);
             LineData data = new LineData(set1);
-            data.setValueTextColor(Color.WHITE);
+            data.setValueTextColor(Color.BLACK);
             data.setValueTextSize(9f);
             mLineChart.setData(data);
         }
