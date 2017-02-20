@@ -16,16 +16,25 @@ import android.widget.Toast;
 import com.balysv.materialmenu.MaterialMenuDrawable;
 import com.gc.materialdesign.views.ButtonRectangle;
 import com.github.mikephil.charting.animation.Easing;
+import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
+import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
 import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.hanks.htextview.HTextView;
 import com.witcher.catanaide.entity.Number;
 import com.witcher.catanaide.view.CheckBox;
@@ -37,7 +46,8 @@ import java.util.List;
  * Created by witcher on 2017/2/18 0018.
  */
 public class MainActivity extends BaseTitleActivity implements View.OnClickListener, OnChartValueSelectedListener {
-    private List<Number> numbers = new ArrayList<>(11);
+    private List<Number> mListNumberCount = new ArrayList<>(11);
+    private List<Integer> mListNumbers = new ArrayList<>();
     private Toolbar toolbar;
     private DrawerLayout drawerLayout;
     private boolean direction;
@@ -51,7 +61,8 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     private HTextView mTvNumber;
 
     private ArrayList<Integer> colors;
-    private PieChart mChart;
+    private PieChart mPieChart;
+    private LineChart mLineChart;
     protected Typeface mTfRegular;
     protected Typeface mTfLight;
 
@@ -68,7 +79,95 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         initViews();
         initSysConfig();
         initSoundPool();
-        initStatistics();
+        initPieChart();
+        initLineChart();
+    }
+
+    private void initLineChart() {
+        mLineChart.getDescription().setEnabled(false);
+        mLineChart.setTouchEnabled(true);
+        mLineChart.setDragDecelerationFrictionCoef(0.9f);
+        mLineChart.setDragEnabled(true);
+        mLineChart.setScaleEnabled(true);
+        mLineChart.setDrawGridBackground(false);
+        mLineChart.setHighlightPerDragEnabled(true);
+        mLineChart.setPinchZoom(true);
+        mLineChart.setBackgroundColor(Color.LTGRAY);
+        mLineChart.animateX(2500);
+        Legend l = mLineChart.getLegend();
+        l.setForm(Legend.LegendForm.LINE);
+        l.setTypeface(mTfLight);
+        l.setTextSize(11f);
+        l.setTextColor(Color.WHITE);
+        l.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
+        l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
+        l.setDrawInside(false);
+
+        XAxis xAxis = mLineChart.getXAxis();
+        xAxis.setTypeface(mTfLight);
+        xAxis.setTextSize(11f);
+        xAxis.setTextColor(Color.WHITE);
+//        xAxis.setLabelCount(0);
+        xAxis.setValueFormatter(new IAxisValueFormatter() {
+            @Override
+            public String getFormattedValue(float value, AxisBase axis) {
+                return (int) value + "";
+            }
+        });
+        xAxis.setDrawGridLines(false);
+        xAxis.setDrawAxisLine(false);
+
+        YAxis leftAxis = mLineChart.getAxisLeft();
+        leftAxis.setTypeface(mTfLight);
+        leftAxis.setTextColor(ColorTemplate.getHoloBlue());
+        leftAxis.setAxisMaximum(12);
+        leftAxis.setAxisMinimum(2);
+        leftAxis.setDrawGridLines(true);
+        leftAxis.setLabelCount(11);
+        leftAxis.setGranularityEnabled(true);
+
+        YAxis rightAxis = mLineChart.getAxisRight();
+        rightAxis.setDrawLabels(false);
+        rightAxis.setDrawGridLines(false);
+        rightAxis.setDrawZeroLine(false);
+        rightAxis.setGranularityEnabled(false);
+    }
+    private void setLineData(){
+        ArrayList<Entry> yVals1 = new ArrayList<>();
+
+        for (int i = 0; i < mListNumbers.size(); i++) {
+            yVals1.add(new Entry(i, mListNumbers.get(i)));
+        }
+//        mLineChart.getXAxis().setLabelCount(mListNumbers.size());
+        LineDataSet set1;
+        if (mLineChart.getData() != null && mLineChart.getData().getDataSetCount() > 0) {
+            set1 = (LineDataSet) mLineChart.getData().getDataSetByIndex(0);
+            set1.setValues(yVals1);
+            mLineChart.getData().notifyDataChanged();
+            mLineChart.notifyDataSetChanged();
+        } else {
+            set1 = new LineDataSet(yVals1, "点数走势图");
+            set1.setValueFormatter(new IValueFormatter() {
+                @Override
+                public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                    return (int)value+"";
+                }
+            });
+            set1.setAxisDependency(YAxis.AxisDependency.LEFT);
+            set1.setColor(ColorTemplate.getHoloBlue());
+            set1.setCircleColor(Color.WHITE);
+            set1.setLineWidth(2f);
+            set1.setCircleRadius(3f);
+            set1.setFillAlpha(65);
+            set1.setFillColor(ColorTemplate.getHoloBlue());
+            set1.setHighLightColor(Color.rgb(244, 117, 117));
+            set1.setDrawCircleHole(false);
+            LineData data = new LineData(set1);
+            data.setValueTextColor(Color.WHITE);
+            data.setValueTextSize(9f);
+            mLineChart.setData(data);
+        }
     }
 
     private void initSysConfig() {
@@ -82,9 +181,9 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         }, 500);
     }
 
-    private void initStatistics() {
+    private void initPieChart() {
         for (int i = 2; i < 13; ++i) {
-            numbers.add(new Number(0, "点数 " + i));
+            mListNumberCount.add(new Number(0, "点数 " + i));
         }
         colors = new ArrayList<>();
         for (int c : ColorTemplate.VORDIPLOM_COLORS)
@@ -100,26 +199,25 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         colors.add(ColorTemplate.getHoloBlue());
         mTfRegular = Typeface.createFromAsset(getAssets(), "OpenSans-Regular.ttf");
         mTfLight = Typeface.createFromAsset(getAssets(), "OpenSans-Light.ttf");
-        mChart.setUsePercentValues(true);
-        mChart.getDescription().setEnabled(false);
-        mChart.setExtraOffsets(5, 10, 5, 5);
-        mChart.setDragDecelerationFrictionCoef(0.95f);
-        mChart.setCenterTextTypeface(mTfLight);
-        mChart.setCenterText("骰子点数统计");
-        mChart.setDrawHoleEnabled(true);
-        mChart.setHoleColor(Color.WHITE);
-        mChart.setTransparentCircleColor(Color.WHITE);
-        mChart.setTransparentCircleAlpha(110);
-        mChart.setHoleRadius(58f);
-        mChart.setTransparentCircleRadius(61f);
-        mChart.setDrawCenterText(true);
-        mChart.setRotationAngle(0);
-        mChart.setRotationEnabled(true);
-        mChart.setHighlightPerTapEnabled(true);
-        mChart.setOnChartValueSelectedListener(this);
-        setData();
-        mChart.animateY(1400, Easing.EasingOption.EaseInOutQuad);
-        Legend l = mChart.getLegend();
+        mPieChart.setUsePercentValues(true);
+        mPieChart.getDescription().setEnabled(false);
+        mPieChart.setExtraOffsets(5, 10, 5, 5);
+        mPieChart.setDragDecelerationFrictionCoef(0.95f);
+        mPieChart.setCenterTextTypeface(mTfLight);
+        mPieChart.setCenterText("骰子点数统计");
+        mPieChart.setDrawHoleEnabled(true);
+        mPieChart.setHoleColor(Color.WHITE);
+        mPieChart.setTransparentCircleColor(Color.WHITE);
+        mPieChart.setTransparentCircleAlpha(110);
+        mPieChart.setHoleRadius(58f);
+        mPieChart.setTransparentCircleRadius(61f);
+        mPieChart.setDrawCenterText(true);
+        mPieChart.setRotationAngle(0);
+        mPieChart.setRotationEnabled(true);
+        mPieChart.setHighlightPerTapEnabled(true);
+        setPieData();
+        mPieChart.animateY(1400, Easing.EasingOption.EaseInOutQuad);
+        Legend l = mPieChart.getLegend();
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
         l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
         l.setOrientation(Legend.LegendOrientation.VERTICAL);
@@ -127,14 +225,14 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         l.setXEntrySpace(7f);
         l.setYEntrySpace(0f);
         l.setYOffset(0f);
-        mChart.setEntryLabelColor(Color.BLACK);
-        mChart.setEntryLabelTypeface(mTfRegular);
-        mChart.setEntryLabelTextSize(12f);
+        mPieChart.setEntryLabelColor(Color.BLACK);
+        mPieChart.setEntryLabelTypeface(mTfRegular);
+        mPieChart.setEntryLabelTextSize(12f);
     }
 
-    private void setData() {
+    private void setPieData() {
         List<PieEntry> list = new ArrayList<>();
-        for (Number number : numbers) {
+        for (Number number : mListNumberCount) {
             if (number.num != 0) {
                 list.add(new PieEntry(number.num, number.name));
             }
@@ -148,9 +246,9 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         data.setValueTextSize(11f);
         data.setValueTextColor(Color.BLACK);
         data.setValueTypeface(mTfLight);
-        mChart.setData(data);
-        mChart.highlightValues(null);
-        mChart.invalidate();
+        mPieChart.setData(data);
+        mPieChart.highlightValues(null);
+        mPieChart.invalidate();
     }
 
     private void initSoundPool() {
@@ -176,11 +274,11 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         mCbPeople3 = (CheckBox) findViewById(R.id.cb_people3);
         mCbPeople4 = (CheckBox) findViewById(R.id.cb_people4);
         mTvNumber = (HTextView) findViewById(R.id.tv_number);
-        mChart = (PieChart) findViewById(R.id.piechart);
+        mPieChart = (PieChart) findViewById(R.id.piechart);
+        mLineChart = (LineChart) findViewById(R.id.linechart);
 
-        mCbPeople3.setClickable(false);
-        mCbPeople4.setClickable(false);
-
+//        mLineChart.setOnChartValueSelectedListener(this);
+        mPieChart.setOnChartValueSelectedListener(this);
 
         mBtRandom.setOnClickListener(this);
         mBtReset.setOnClickListener(this);
@@ -270,12 +368,14 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     }
 
     private void resetGame() {
-        numbers.clear();
+        mListNumberCount.clear();
+        mListNumbers.clear();
         for (int i = 2; i < 13; ++i) {
-            numbers.add(new Number(0, "点数 " + i));
+            mListNumberCount.add(new Number(0, "点数 " + i));
         }
         mTvNumber.animateText("");
-        setData();
+        setPieData();
+//        setLineData();
         drawerLayout.closeDrawer(GravityCompat.START);
         mListLastReadyNums.clear();
         mIntReadyNum = 0;
@@ -293,8 +393,10 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
 
     private void newNumber() {
         int no = Util.getNewNo();
-        numbers.get(no - 2).num++;
-        setData();
+        mListNumberCount.get(no - 2).num++;
+        mListNumbers.add(no);
+        setPieData();
+        setLineData();
         mTvNumber.animateText(no + "点");
         mSoundPool.play(--no, 1, 1, 0, 0, 1);
     }
