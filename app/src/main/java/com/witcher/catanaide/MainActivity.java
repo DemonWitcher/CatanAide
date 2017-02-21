@@ -168,6 +168,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             data.setValueTextSize(9f);
             mLineChart.setData(data);
         }
+        mLineChart.invalidate();
     }
 
     private void initSysConfig() {
