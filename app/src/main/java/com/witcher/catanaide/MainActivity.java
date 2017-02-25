@@ -8,9 +8,6 @@ import android.media.SoundPool;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v7.widget.Toolbar;
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.style.AbsoluteSizeSpan;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
@@ -18,7 +15,6 @@ import android.widget.Toast;
 
 import com.balysv.materialmenu.MaterialMenuDrawable;
 import com.gc.materialdesign.views.ButtonRectangle;
-import com.gc.materialdesign.views.Slider;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.BarLineChartBase;
@@ -49,6 +45,7 @@ import com.hanks.htextview.HTextView;
 import com.witcher.catanaide.entity.Number;
 import com.witcher.catanaide.view.CustomCheckBox;
 import com.witcher.catanaide.view.CustomDrawerLayout;
+import com.witcher.catanaide.view.CustomSlider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,7 +68,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     private CustomCheckBox mCbPeople3;
     private CustomCheckBox mCbPeople4;
     private HTextView mTvNumber;
-    private Slider mSliderTime;
+    private CustomSlider mSliderTime;
 
     private ArrayList<Integer> colors;
     private PieChart mPieChart;
@@ -248,27 +245,32 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             public void run() {
                 mSliderTime.setValue(mIntTimer);
                 setPeopleCb();
+                mSliderTime.invalidate();
             }
         }, 300);
         mThreadTimer = new Thread(new Runnable() {
             @Override
             public void run() {
                 while (!Thread.currentThread().isInterrupted()) {
-                    if (mIntCurrentTimer.get() == 0) {
+                    synchronized (mThreadTimer) {
+                        if (mIntCurrentTimer.get() == 0) {
 
-                    } else {
-                        mIntCurrentTimer.getAndDecrement();
-                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                setTvNumber();
+                        } else {
+                            //sleep之前的值和sleep之后的值不一样的话 就重新sleep
+                            mIntCurrentTimer.getAndDecrement();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    setTvNumber();
+                                }
+                            });
+                            try {
+                                mThreadTimer.wait(1000);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                                return;
                             }
-                        });
-                    }
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        }
                     }
                 }
             }
@@ -368,7 +370,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     }
 
     private void initViews() {
-        mSliderTime = (Slider) findViewById(R.id.slider_time);
+        mSliderTime = (CustomSlider) findViewById(R.id.slider_time);
         mBtRandom = (ButtonRectangle) findViewById(R.id.random);
         mBtReset = (ButtonRectangle) findViewById(R.id.reset);
         mRlPeople3 = (RelativeLayout) findViewById(R.id.rl_people3);
@@ -445,7 +447,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
                 return false;
             }
         });
-        mSliderTime.setOnValueChangedListener(new Slider.OnValueChangedListener() {
+        mSliderTime.setOnValueChangedListener(new CustomSlider.OnValueChangedListener() {
             @Override
             public void onValueChanged(int value) {
                 setTimer(value);
@@ -498,7 +500,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
 
     private void setTimer(int timer) {
         mIntTimer = timer;
-        mIntCurrentTimer.set(timer);
+//        mIntCurrentTimer.set(timer);
         SPUtil.setTimer(this, timer);
     }
 
@@ -514,7 +516,10 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         customDrawerLayout.closeDrawer(GravityCompat.START);
         mListLastReadyNums.clear();
         mIntReadyNum = 0;
-        mIntCurrentTimer.set(0);
+        synchronized (mThreadTimer){
+            mIntCurrentTimer.set(0);
+            mThreadTimer.notifyAll();
+        }
     }
 
     private void readyNumber() {
@@ -524,25 +529,27 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         }
         mListLastReadyNums.add(mIntNumber);
         mTvNumber.animateText(mIntNumber + "点");
-        mSoundPool.play(mIntNumber-1, 1, 1, 0, 0, 1);
+        mSoundPool.play(mIntNumber - 1, 1, 1, 0, 0, 1);
     }
 
     private void newNumber() {
-        mIntCurrentTimer.set(mIntTimer);
+        synchronized (mThreadTimer){
+            mIntCurrentTimer.set(mIntTimer+1);
+            mThreadTimer.notifyAll();
+        }
         mIntNumber = Util.getNewNo();
         mListNumberCount.get(mIntNumber - 2).num++;
         mListNumbers.add(mIntNumber);
         setPieData();
         setBarData();
         setLineData();
-        setTvNumber();
-        mSoundPool.play(mIntNumber-1, 1, 1, 0, 0, 1);
+        mSoundPool.play(mIntNumber - 1, 1, 1, 0, 0, 1);
     }
 
     private void setTvNumber() {
-        Spannable span = new SpannableString(mIntNumber + "点(" + mIntCurrentTimer + ")");
-        span.setSpan(new AbsoluteSizeSpan(Util.sp2px(this, 10)), 0, (mIntNumber + "点").length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        mTvNumber.animateText(span);
+        synchronized (mThreadTimer){
+            mTvNumber.animateText(mIntNumber + "点(" + mIntCurrentTimer + ")");
+        }
     }
 
     private boolean isOnReady() {

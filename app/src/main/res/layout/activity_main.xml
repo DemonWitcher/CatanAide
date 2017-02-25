@@ -150,13 +150,13 @@
                     android:text="设置计时器时间"
                     android:textColor="@color/black"
                     android:textSize="14sp" />
-                <com.gc.materialdesign.views.Slider
+                <com.witcher.catanaide.view.CustomSlider
                     android:layout_marginTop="6dp"
                     android:id="@+id/slider_time"
                     android:layout_width="fill_parent"
-                    android:layout_height="40dp"
+                    android:layout_height="wrap_content"
                     android:background="@color/colorPrimary"
-                    materialdesign:max="60"
+                    materialdesign:max="120"
                     materialdesign:min="20"
                     materialdesign:showNumberIndicator="true"/>
             </LinearLayout>
