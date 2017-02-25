@@ -7,21 +7,30 @@ import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
-import android.support.v4.widget.DrawerLayout;
 import android.support.v7.widget.Toolbar;
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.style.AbsoluteSizeSpan;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
 import com.balysv.materialmenu.MaterialMenuDrawable;
 import com.gc.materialdesign.views.ButtonRectangle;
+import com.gc.materialdesign.views.Slider;
 import com.github.mikephil.charting.animation.Easing;
+import com.github.mikephil.charting.charts.BarChart;
+import com.github.mikephil.charting.charts.BarLineChartBase;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
 import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.BarData;
+import com.github.mikephil.charting.data.BarDataSet;
+import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
@@ -32,15 +41,18 @@ import com.github.mikephil.charting.formatter.IAxisValueFormatter;
 import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
+import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.hanks.htextview.HTextView;
 import com.witcher.catanaide.entity.Number;
-import com.witcher.catanaide.view.CheckBox;
+import com.witcher.catanaide.view.CustomCheckBox;
+import com.witcher.catanaide.view.CustomDrawerLayout;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by witcher on 2017/2/18 0018.
@@ -49,20 +61,22 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     private List<Number> mListNumberCount = new ArrayList<>(11);
     private List<Integer> mListNumbers = new ArrayList<>();
     private Toolbar toolbar;
-    private DrawerLayout drawerLayout;
+    private CustomDrawerLayout customDrawerLayout;
     private boolean direction;
 
     private ButtonRectangle mBtRandom;
     private ButtonRectangle mBtReset;
     private RelativeLayout mRlPeople3;
     private RelativeLayout mRlPeople4;
-    private CheckBox mCbPeople3;
-    private CheckBox mCbPeople4;
+    private CustomCheckBox mCbPeople3;
+    private CustomCheckBox mCbPeople4;
     private HTextView mTvNumber;
+    private Slider mSliderTime;
 
     private ArrayList<Integer> colors;
     private PieChart mPieChart;
     private LineChart mLineChart;
+    private BarChart mBarChart;
     protected Typeface mTfRegular;
     protected Typeface mTfLight;
 
@@ -70,7 +84,12 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
 
     private int mIntCurrentPeopleNum;
     private int mIntReadyNum;
+    private int mIntTimer;
+    private final AtomicInteger mIntCurrentTimer = new AtomicInteger();
+    private int mIntNumber;
     private List<Integer> mListLastReadyNums = new ArrayList<>();
+    private Thread mThreadTimer;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,6 +100,51 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         initSoundPool();
         initPieChart();
         initLineChart();
+        initBarChart();
+    }
+
+    private void initBarChart() {
+        mBarChart.getDescription().setEnabled(false);
+        mBarChart.setPinchZoom(false);
+        mBarChart.setDrawBarShadow(false);
+        mBarChart.setDrawGridBackground(false);
+        XAxis xAxis = mBarChart.getXAxis();
+        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
+        xAxis.setDrawGridLines(false);
+        mBarChart.getAxisLeft().setDrawGridLines(false);
+        mBarChart.animateY(2500);
+        mBarChart.getLegend().setEnabled(false);
+        setLeftAndRight(mBarChart);
+    }
+
+    private void setBarData() {
+        ArrayList<BarEntry> yVals1 = new ArrayList<>();
+        for (int i = 0; i < mListNumbers.size(); i++) {
+            yVals1.add(new BarEntry(i, mListNumbers.get(i)));
+        }
+        BarDataSet set1;
+        if (mBarChart.getData() != null && mBarChart.getData().getDataSetCount() > 0) {
+            set1 = (BarDataSet) mBarChart.getData().getDataSetByIndex(0);
+            set1.setValues(yVals1);
+            mBarChart.getData().notifyDataChanged();
+            mBarChart.notifyDataSetChanged();
+        } else {
+            set1 = new BarDataSet(yVals1, "骰子柱状图");
+            set1.setValueFormatter(new IValueFormatter() {
+                @Override
+                public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                    return (int) value + "";
+                }
+            });
+            set1.setColors(ColorTemplate.VORDIPLOM_COLORS);
+            set1.setDrawValues(true);
+            ArrayList<IBarDataSet> dataSets = new ArrayList<>();
+            dataSets.add(set1);
+            BarData data = new BarData(dataSets);
+            mBarChart.setData(data);
+            mBarChart.setFitBars(true);
+        }
+        mBarChart.invalidate();
     }
 
     private void initLineChart() {
@@ -103,7 +167,6 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.LEFT);
         l.setOrientation(Legend.LegendOrientation.HORIZONTAL);
         l.setDrawInside(false);
-
         XAxis xAxis = mLineChart.getXAxis();
         xAxis.setTypeface(mTfLight);
         xAxis.setTextSize(11f);
@@ -117,8 +180,11 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         });
         xAxis.setDrawGridLines(false);
         xAxis.setDrawAxisLine(false);
+        setLeftAndRight(mLineChart);
+    }
 
-        YAxis leftAxis = mLineChart.getAxisLeft();
+    private void setLeftAndRight(BarLineChartBase chart) {
+        YAxis leftAxis = chart.getAxisLeft();
         leftAxis.setTypeface(mTfLight);
         leftAxis.setTextColor(ColorTemplate.getHoloBlue());
         leftAxis.setAxisMaximum(12);
@@ -127,13 +193,14 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         leftAxis.setLabelCount(11);
         leftAxis.setGranularityEnabled(true);
 
-        YAxis rightAxis = mLineChart.getAxisRight();
+        YAxis rightAxis = chart.getAxisRight();
         rightAxis.setDrawLabels(false);
         rightAxis.setDrawGridLines(false);
         rightAxis.setDrawZeroLine(false);
         rightAxis.setGranularityEnabled(false);
     }
-    private void setLineData(){
+
+    private void setLineData() {
         ArrayList<Entry> yVals1 = new ArrayList<>();
 
         for (int i = 0; i < mListNumbers.size(); i++) {
@@ -141,7 +208,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         }
 //        mLineChart.getXAxis().setLabelCount(mListNumbers.size());
         LineDataSet set1;
-        if (mLineChart.getData() != null && mLineChart.getData().getDataSetCount() > 0&&mListNumbers.size()>0) {
+        if (mLineChart.getData() != null && mLineChart.getData().getDataSetCount() > 0 && mListNumbers.size() > 0) {
             set1 = (LineDataSet) mLineChart.getData().getDataSetByIndex(0);
             set1.setValues(yVals1);
             mLineChart.getData().notifyDataChanged();
@@ -151,7 +218,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             set1.setValueFormatter(new IValueFormatter() {
                 @Override
                 public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
-                    return (int)value+"";
+                    return (int) value + "";
                 }
             });
             set1.setAxisDependency(YAxis.AxisDependency.LEFT);
@@ -173,13 +240,46 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
 
     private void initSysConfig() {
         mIntCurrentPeopleNum = SPUtil.getPeopleNum(this);
+        mIntTimer = SPUtil.getTimer(this);
+        mIntCurrentTimer.set(0);
         L.i("mIntCurrentPeopleNum:" + mIntCurrentPeopleNum);
         mCbPeople3.postDelayed(new Runnable() {
             @Override
             public void run() {
+                mSliderTime.setValue(mIntTimer);
                 setPeopleCb();
             }
-        }, 500);
+        }, 300);
+        mThreadTimer = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                while (!Thread.currentThread().isInterrupted()) {
+                    if (mIntCurrentTimer.get() == 0) {
+
+                    } else {
+                        mIntCurrentTimer.getAndDecrement();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                setTvNumber();
+                            }
+                        });
+                    }
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        mThreadTimer.start();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mThreadTimer.interrupt();
     }
 
     private void initPieChart() {
@@ -268,15 +368,17 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     }
 
     private void initViews() {
+        mSliderTime = (Slider) findViewById(R.id.slider_time);
         mBtRandom = (ButtonRectangle) findViewById(R.id.random);
         mBtReset = (ButtonRectangle) findViewById(R.id.reset);
         mRlPeople3 = (RelativeLayout) findViewById(R.id.rl_people3);
         mRlPeople4 = (RelativeLayout) findViewById(R.id.rl_people4);
-        mCbPeople3 = (CheckBox) findViewById(R.id.cb_people3);
-        mCbPeople4 = (CheckBox) findViewById(R.id.cb_people4);
+        mCbPeople3 = (CustomCheckBox) findViewById(R.id.cb_people3);
+        mCbPeople4 = (CustomCheckBox) findViewById(R.id.cb_people4);
         mTvNumber = (HTextView) findViewById(R.id.tv_number);
         mPieChart = (PieChart) findViewById(R.id.piechart);
         mLineChart = (LineChart) findViewById(R.id.linechart);
+        mBarChart = (BarChart) findViewById(R.id.barchart);
 
 //        mLineChart.setOnChartValueSelectedListener(this);
         mPieChart.setOnChartValueSelectedListener(this);
@@ -294,15 +396,15 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             @Override
             public void onClick(View v) {
                 if (direction) {
-                    drawerLayout.closeDrawer(GravityCompat.START);
+                    customDrawerLayout.closeDrawer(GravityCompat.START);
                 } else {
-                    drawerLayout.openDrawer(GravityCompat.START);
+                    customDrawerLayout.openDrawer(GravityCompat.START);
                 }
             }
         });
-        drawerLayout = ((DrawerLayout) findViewById(R.id.drawer_layout));
-        drawerLayout.setScrimColor(Color.parseColor("#66000000"));
-        drawerLayout.setDrawerListener(new DrawerLayout.SimpleDrawerListener() {
+        customDrawerLayout = ((CustomDrawerLayout) findViewById(R.id.drawer_layout));
+        customDrawerLayout.setScrimColor(Color.parseColor("#66000000"));
+        customDrawerLayout.setDrawerListener(new CustomDrawerLayout.SimpleDrawerListener() {
 
             @Override
             public void onDrawerSlide(View drawerView, float slideOffset) {
@@ -322,7 +424,33 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
                 direction = false;
             }
         });
-
+        mSliderTime.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                int action = event.getAction();
+                switch (action) {
+                    case MotionEvent.ACTION_DOWN: {
+                        customDrawerLayout.setmIsIntercept(false);
+                    }
+                    break;
+                    case MotionEvent.ACTION_UP: {
+                        customDrawerLayout.setmIsIntercept(true);
+                    }
+                    break;
+                    case MotionEvent.ACTION_CANCEL: {
+                        customDrawerLayout.setmIsIntercept(true);
+                    }
+                    break;
+                }
+                return false;
+            }
+        });
+        mSliderTime.setOnValueChangedListener(new Slider.OnValueChangedListener() {
+            @Override
+            public void onValueChanged(int value) {
+                setTimer(value);
+            }
+        });
     }
 
     @Override
@@ -368,6 +496,12 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         mCbPeople4.setChecked(mIntCurrentPeopleNum == 4);
     }
 
+    private void setTimer(int timer) {
+        mIntTimer = timer;
+        mIntCurrentTimer.set(timer);
+        SPUtil.setTimer(this, timer);
+    }
+
     private void resetGame() {
         mListNumberCount.clear();
         mListNumbers.clear();
@@ -377,29 +511,38 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         mTvNumber.animateText("");
         setPieData();
 //        setLineData();
-        drawerLayout.closeDrawer(GravityCompat.START);
+        customDrawerLayout.closeDrawer(GravityCompat.START);
         mListLastReadyNums.clear();
         mIntReadyNum = 0;
+        mIntCurrentTimer.set(0);
     }
 
     private void readyNumber() {
-        int no = Util.getNewNo();
-        while (mListLastReadyNums.contains(no)) {
-            no = Util.getNewNo();
+        mIntNumber = Util.getNewNo();
+        while (mListLastReadyNums.contains(mIntNumber)) {
+            mIntNumber = Util.getNewNo();
         }
-        mListLastReadyNums.add(no);
-        mTvNumber.animateText(no + "点");
-        mSoundPool.play(--no, 1, 1, 0, 0, 1);
+        mListLastReadyNums.add(mIntNumber);
+        mTvNumber.animateText(mIntNumber + "点");
+        mSoundPool.play(mIntNumber-1, 1, 1, 0, 0, 1);
     }
 
     private void newNumber() {
-        int no = Util.getNewNo();
-        mListNumberCount.get(no - 2).num++;
-        mListNumbers.add(no);
+        mIntCurrentTimer.set(mIntTimer);
+        mIntNumber = Util.getNewNo();
+        mListNumberCount.get(mIntNumber - 2).num++;
+        mListNumbers.add(mIntNumber);
         setPieData();
+        setBarData();
         setLineData();
-        mTvNumber.animateText(no + "点");
-        mSoundPool.play(--no, 1, 1, 0, 0, 1);
+        setTvNumber();
+        mSoundPool.play(mIntNumber-1, 1, 1, 0, 0, 1);
+    }
+
+    private void setTvNumber() {
+        Spannable span = new SpannableString(mIntNumber + "点(" + mIntCurrentTimer + ")");
+        span.setSpan(new AbsoluteSizeSpan(Util.sp2px(this, 10)), 0, (mIntNumber + "点").length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        mTvNumber.animateText(span);
     }
 
     private boolean isOnReady() {
@@ -407,7 +550,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     }
 
     private void refreshDrawerState() {
-        this.direction = drawerLayout.isDrawerOpen(GravityCompat.START);
+        this.direction = customDrawerLayout.isDrawerOpen(GravityCompat.START);
     }
 
     private static MaterialMenuDrawable getMaterialMenu(Toolbar toolbar) {

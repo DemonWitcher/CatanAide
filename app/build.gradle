@@ -34,4 +34,5 @@ dependencies {
     compile 'com.balysv.materialmenu:material-menu:2.0.0'
     compile 'hanks.xyz:htextview-library:0.1.5'
     compile 'com.github.PhilJay:MPAndroidChart:v3.0.1'
+    compile 'com.nineoldandroids:library:2.4.0'
 }

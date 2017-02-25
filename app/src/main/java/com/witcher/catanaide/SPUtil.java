@@ -17,5 +17,15 @@ public class SPUtil {
         editor.putInt("peopleNum",num);
         editor.commit();
     }
+
+    public static int getTimer(Context context) {
+        return context.getSharedPreferences(context.getPackageName(), context.MODE_PRIVATE).getInt("timer", 30);
+    }
+
+    public static void setTimer(Context context,int timer){
+        SharedPreferences.Editor editor = context.getSharedPreferences(context.getPackageName(), context.MODE_PRIVATE).edit();
+        editor.putInt("timer",timer);
+        editor.commit();
+    }
 }
 
