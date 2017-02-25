@@ -256,7 +256,6 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
                         if (mIntCurrentTimer.get() == 0) {
 
                         } else {
-                            //sleep之前的值和sleep之后的值不一样的话 就重新sleep
                             mIntCurrentTimer.getAndDecrement();
                             runOnUiThread(new Runnable() {
                                 @Override
