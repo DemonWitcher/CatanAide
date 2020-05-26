@@ -4,11 +4,13 @@ import android.content.Context;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
+import androidx.drawerlayout.widget.DrawerLayout;
+
 /**
  * Created by Administrator on 2017/2/22 0022.
  */
 
-public class CustomDrawerLayout extends android.support.v4.widget.DrawerLayout{
+public class CustomDrawerLayout extends DrawerLayout {
 
     private boolean mIsIntercept = true;
 

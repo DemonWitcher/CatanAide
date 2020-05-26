@@ -6,8 +6,6 @@ import android.graphics.Typeface;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
-import android.support.v4.view.GravityCompat;
-import android.support.v7.widget.Toolbar;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.RelativeLayout;
@@ -20,7 +18,6 @@ import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.charts.BarLineChartBase;
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.charts.PieChart;
-import com.github.mikephil.charting.components.AxisBase;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
 import com.github.mikephil.charting.components.YAxis;
@@ -33,14 +30,12 @@ import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
-import com.github.mikephil.charting.formatter.IAxisValueFormatter;
-import com.github.mikephil.charting.formatter.IValueFormatter;
 import com.github.mikephil.charting.formatter.PercentFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.github.mikephil.charting.highlight.Highlight;
 import com.github.mikephil.charting.interfaces.datasets.IBarDataSet;
 import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
-import com.github.mikephil.charting.utils.ViewPortHandler;
 import com.hanks.htextview.HTextView;
 import com.witcher.catanaide.entity.Number;
 import com.witcher.catanaide.view.CustomCheckBox;
@@ -50,6 +45,10 @@ import com.witcher.catanaide.view.CustomSlider;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import androidx.appcompat.widget.Toolbar;
+import androidx.core.view.GravityCompat;
+
 
 /**
  * Created by witcher on 2017/2/18 0018.
@@ -127,9 +126,9 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             mBarChart.notifyDataSetChanged();
         } else {
             set1 = new BarDataSet(yVals1, "骰子柱状图");
-            set1.setValueFormatter(new IValueFormatter() {
+            set1.setValueFormatter(new ValueFormatter() {
                 @Override
-                public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                public String getFormattedValue(float value) {
                     return (int) value + "";
                 }
             });
@@ -169,9 +168,9 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         xAxis.setTextSize(11f);
         xAxis.setTextColor(Color.BLACK);
 //        xAxis.setLabelCount(0);
-        xAxis.setValueFormatter(new IAxisValueFormatter() {
+        xAxis.setValueFormatter(new ValueFormatter() {
             @Override
-            public String getFormattedValue(float value, AxisBase axis) {
+            public String getFormattedValue(float value) {
                 return (int) value + "";
             }
         });
@@ -212,9 +211,9 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
             mLineChart.notifyDataSetChanged();
         } else {
             set1 = new LineDataSet(yVals1, "点数走势图");
-            set1.setValueFormatter(new IValueFormatter() {
+            set1.setValueFormatter(new ValueFormatter() {
                 @Override
-                public String getFormattedValue(float value, Entry entry, int dataSetIndex, ViewPortHandler viewPortHandler) {
+                public String getFormattedValue(float value) {
                     return (int) value + "";
                 }
             });
@@ -318,7 +317,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         mPieChart.setRotationEnabled(true);
         mPieChart.setHighlightPerTapEnabled(true);
         setPieData();
-        mPieChart.animateY(1400, Easing.EasingOption.EaseInOutQuad);
+        mPieChart.animateY(1400, Easing.EaseInOutQuad);
         Legend l = mPieChart.getLegend();
         l.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
         l.setHorizontalAlignment(Legend.LegendHorizontalAlignment.RIGHT);
@@ -369,17 +368,17 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     }
 
     private void initViews() {
-        mSliderTime = (CustomSlider) findViewById(R.id.slider_time);
-        mBtRandom = (ButtonRectangle) findViewById(R.id.random);
-        mBtReset = (ButtonRectangle) findViewById(R.id.reset);
-        mRlPeople3 = (RelativeLayout) findViewById(R.id.rl_people3);
-        mRlPeople4 = (RelativeLayout) findViewById(R.id.rl_people4);
-        mCbPeople3 = (CustomCheckBox) findViewById(R.id.cb_people3);
-        mCbPeople4 = (CustomCheckBox) findViewById(R.id.cb_people4);
-        mTvNumber = (HTextView) findViewById(R.id.tv_number);
-        mPieChart = (PieChart) findViewById(R.id.piechart);
-        mLineChart = (LineChart) findViewById(R.id.linechart);
-        mBarChart = (BarChart) findViewById(R.id.barchart);
+        mSliderTime = findViewById(R.id.slider_time);
+        mBtRandom = findViewById(R.id.random);
+        mBtReset = findViewById(R.id.reset);
+        mRlPeople3 = findViewById(R.id.rl_people3);
+        mRlPeople4 = findViewById(R.id.rl_people4);
+        mCbPeople3 = findViewById(R.id.cb_people3);
+        mCbPeople4 = findViewById(R.id.cb_people4);
+        mTvNumber = findViewById(R.id.tv_number);
+        mPieChart = findViewById(R.id.piechart);
+        mLineChart = findViewById(R.id.linechart);
+        mBarChart = findViewById(R.id.barchart);
 
 //        mLineChart.setOnChartValueSelectedListener(this);
         mPieChart.setOnChartValueSelectedListener(this);
@@ -389,7 +388,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         mRlPeople3.setOnClickListener(this);
         mRlPeople4.setOnClickListener(this);
 
-        toolbar = (Toolbar) findViewById(R.id.toolbar);
+        toolbar =  findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         MaterialMenuDrawable materialMenu = new MaterialMenuDrawable(this, Color.WHITE, MaterialMenuDrawable.Stroke.THIN);
         toolbar.setNavigationIcon(materialMenu);
@@ -403,7 +402,7 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
                 }
             }
         });
-        customDrawerLayout = ((CustomDrawerLayout) findViewById(R.id.drawer_layout));
+        customDrawerLayout = findViewById(R.id.drawer_layout);
         customDrawerLayout.setScrimColor(Color.parseColor("#66000000"));
         customDrawerLayout.setDrawerListener(new CustomDrawerLayout.SimpleDrawerListener() {
 

@@ -19,9 +19,9 @@ import android.view.Window;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.gc.materialdesign.R;
 import com.gc.materialdesign.utils.Utils;
 import com.nineoldandroids.view.ViewHelper;
+import com.witcher.catanaide.R;
 
 public class CustomSlider extends CustomView {
     // Event when slider change value
