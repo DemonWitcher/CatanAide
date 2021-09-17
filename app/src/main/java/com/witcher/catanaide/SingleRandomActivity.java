@@ -1,17 +1,15 @@
 package com.witcher.catanaide;
 
-
+import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.media.AudioManager;
 import android.media.SoundPool;
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.RelativeLayout;
 import android.widget.Toast;
 
-import com.balysv.materialmenu.MaterialMenuDrawable;
 import com.gc.materialdesign.views.ButtonRectangle;
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.BarChart;
@@ -38,39 +36,23 @@ import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
 import com.hanks.htextview.HTextView;
 import com.witcher.catanaide.entity.Number;
-import com.witcher.catanaide.view.CustomCheckBox;
-import com.witcher.catanaide.view.CustomDrawerLayout;
-import com.witcher.catanaide.view.CustomSlider;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import androidx.appcompat.widget.Toolbar;
-import androidx.core.view.GravityCompat;
 
+public class SingleRandomActivity extends BaseTitleActivity implements View.OnClickListener, OnChartValueSelectedListener {
 
-/**
- * Created by witcher on 2017/2/18 0018.
- */
-public class MainActivity extends BaseTitleActivity implements View.OnClickListener, OnChartValueSelectedListener {
-    private List<Number> mListNumberCount = new ArrayList<>(11);
-    private List<Integer> mListNumbers = new ArrayList<>();
-    private Toolbar toolbar;
-    private CustomDrawerLayout customDrawerLayout;
-    private boolean direction;
+    public static void gotoSingleRandomActivity(Context context) {
+        Intent intent = new Intent(context, SingleRandomActivity.class);
+        context.startActivity(intent);
+    }
 
     private ButtonRectangle mBtRandom;
-    private ButtonRectangle mBtReset;
-    private ButtonRectangle mBtGotoSingleRandom;
-    private RelativeLayout mRlPeople3;
-    private RelativeLayout mRlPeople4;
-    private CustomCheckBox mCbPeople3;
-    private CustomCheckBox mCbPeople4;
     private HTextView mTvNumber;
-    private CustomSlider mSliderTime;
+    private Toolbar toolbar;
 
-    private ArrayList<Integer> colors;
     private PieChart mPieChart;
     private LineChart mLineChart;
     private BarChart mBarChart;
@@ -79,25 +61,36 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
 
     private SoundPool mSoundPool;
 
-    private int mIntCurrentPeopleNum;
-    private int mIntReadyNum;
-    private int mIntTimer;
-    private final AtomicInteger mIntCurrentTimer = new AtomicInteger();
+    private List<Number> mListNumberCount = new ArrayList<>(6);
+    private List<Integer> mListNumbers = new ArrayList<>();
     private int mIntNumber;
-    private List<Integer> mListLastReadyNums = new ArrayList<>();
-    private Thread mThreadTimer;
-
+    private ArrayList<Integer> colors;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_single_random);
         initViews();
-        initSysConfig();
         initSoundPool();
         initPieChart();
         initLineChart();
         initBarChart();
+    }
+
+    private void initViews() {
+        mBtRandom = findViewById(R.id.random);
+        mTvNumber = findViewById(R.id.tv_number);
+
+        mPieChart = findViewById(R.id.piechart);
+        mLineChart = findViewById(R.id.linechart);
+        mBarChart = findViewById(R.id.barchart);
+
+        mPieChart.setOnChartValueSelectedListener(this);
+
+        mBtRandom.setOnClickListener(this);
+
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
     }
 
     private void initBarChart() {
@@ -184,10 +177,10 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         YAxis leftAxis = chart.getAxisLeft();
         leftAxis.setTypeface(mTfLight);
         leftAxis.setTextColor(ColorTemplate.getHoloBlue());
-        leftAxis.setAxisMaximum(12);
-        leftAxis.setAxisMinimum(2);
+        leftAxis.setAxisMaximum(6);
+        leftAxis.setAxisMinimum(1);
         leftAxis.setDrawGridLines(true);
-        leftAxis.setLabelCount(11);
+        leftAxis.setLabelCount(6);
         leftAxis.setGranularityEnabled(true);
 
         YAxis rightAxis = chart.getAxisRight();
@@ -235,56 +228,9 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
         mLineChart.invalidate();
     }
 
-    private void initSysConfig() {
-        mIntCurrentPeopleNum = SPUtil.getPeopleNum(this);
-        mIntTimer = SPUtil.getTimer(this);
-        mIntCurrentTimer.set(0);
-        L.i("mIntCurrentPeopleNum:" + mIntCurrentPeopleNum);
-        mCbPeople3.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mSliderTime.setValue(mIntTimer);
-                setPeopleCb();
-                mSliderTime.invalidate();
-            }
-        }, 300);
-        mThreadTimer = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!Thread.currentThread().isInterrupted()) {
-                    synchronized (mThreadTimer) {
-                        if (mIntCurrentTimer.get() == 0) {
-
-                        } else {
-                            mIntCurrentTimer.getAndDecrement();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    setTvNumber();
-                                }
-                            });
-                            try {
-                                mThreadTimer.wait(1000);
-                            } catch (InterruptedException e) {
-                                e.printStackTrace();
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        mThreadTimer.start();
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mThreadTimer.interrupt();
-    }
 
     private void initPieChart() {
-        for (int i = 2; i < 13; ++i) {
+        for (int i = 1; i < 7; ++i) {
             mListNumberCount.add(new Number(0, "点数 " + i));
         }
         colors = new ArrayList<>();
@@ -354,219 +300,38 @@ public class MainActivity extends BaseTitleActivity implements View.OnClickListe
     }
 
     private void initSoundPool() {
-        mSoundPool = new SoundPool(11, AudioManager.STREAM_SYSTEM, 5);
+        mSoundPool = new SoundPool(6, AudioManager.STREAM_SYSTEM, 5);
         mSoundPool.load(this, R.raw.sound2, 1);
         mSoundPool.load(this, R.raw.sound3, 1);
         mSoundPool.load(this, R.raw.sound4, 1);
         mSoundPool.load(this, R.raw.sound5, 1);
         mSoundPool.load(this, R.raw.sound6, 1);
-        mSoundPool.load(this, R.raw.sound7, 1);
-        mSoundPool.load(this, R.raw.sound8, 1);
-        mSoundPool.load(this, R.raw.sound9, 1);
-        mSoundPool.load(this, R.raw.sound10, 1);
-        mSoundPool.load(this, R.raw.sound11, 1);
-        mSoundPool.load(this, R.raw.sound12, 1);
-    }
-
-    private void initViews() {
-        mSliderTime = findViewById(R.id.slider_time);
-        mBtRandom = findViewById(R.id.random);
-        mBtReset = findViewById(R.id.reset);
-        mRlPeople3 = findViewById(R.id.rl_people3);
-        mRlPeople4 = findViewById(R.id.rl_people4);
-        mCbPeople3 = findViewById(R.id.cb_people3);
-        mCbPeople4 = findViewById(R.id.cb_people4);
-        mTvNumber = findViewById(R.id.tv_number);
-        mPieChart = findViewById(R.id.piechart);
-        mLineChart = findViewById(R.id.linechart);
-        mBarChart = findViewById(R.id.barchart);
-        mBtGotoSingleRandom = findViewById(R.id.single_random);
-
-//        mLineChart.setOnChartValueSelectedListener(this);
-        mPieChart.setOnChartValueSelectedListener(this);
-
-        mBtRandom.setOnClickListener(this);
-        mBtReset.setOnClickListener(this);
-        mRlPeople3.setOnClickListener(this);
-        mRlPeople4.setOnClickListener(this);
-        mBtGotoSingleRandom.setOnClickListener(this);
-
-        toolbar = findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        MaterialMenuDrawable materialMenu = new MaterialMenuDrawable(this, Color.WHITE, MaterialMenuDrawable.Stroke.THIN);
-        toolbar.setNavigationIcon(materialMenu);
-        toolbar.setNavigationOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                if (direction) {
-                    customDrawerLayout.closeDrawer(GravityCompat.START);
-                } else {
-                    customDrawerLayout.openDrawer(GravityCompat.START);
-                }
-            }
-        });
-        customDrawerLayout = findViewById(R.id.drawer_layout);
-        customDrawerLayout.setScrimColor(Color.parseColor("#66000000"));
-        customDrawerLayout.setDrawerListener(new CustomDrawerLayout.SimpleDrawerListener() {
-
-            @Override
-            public void onDrawerSlide(View drawerView, float slideOffset) {
-                getMaterialMenu(toolbar).setTransformationOffset(
-                        MaterialMenuDrawable.AnimationState.BURGER_ARROW,
-                        direction ? 2 - slideOffset : slideOffset
-                );
-            }
-
-            @Override
-            public void onDrawerOpened(android.view.View drawerView) {
-                direction = true;
-            }
-
-            @Override
-            public void onDrawerClosed(android.view.View drawerView) {
-                direction = false;
-            }
-        });
-        mSliderTime.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                int action = event.getAction();
-                switch (action) {
-                    case MotionEvent.ACTION_DOWN: {
-                        customDrawerLayout.setmIsIntercept(false);
-                    }
-                    break;
-                    case MotionEvent.ACTION_UP: {
-                        customDrawerLayout.setmIsIntercept(true);
-                    }
-                    break;
-                    case MotionEvent.ACTION_CANCEL: {
-                        customDrawerLayout.setmIsIntercept(true);
-                    }
-                    break;
-                }
-                return false;
-            }
-        });
-        mSliderTime.setOnValueChangedListener(new CustomSlider.OnValueChangedListener() {
-            @Override
-            public void onValueChanged(int value) {
-                setTimer(value);
-            }
-        });
-    }
-
-    @Override
-    protected void onPostCreate(Bundle savedInstanceState) {
-        super.onPostCreate(savedInstanceState);
-        refreshDrawerState();
     }
 
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.random: {
-                if (isOnReady()) {
-                    readyNumber();
-                } else {
-                    newNumber();
-                }
-            }
-            break;
-            case R.id.reset: {
-                resetGame();
-            }
-            break;
-            case R.id.rl_people3: {
-                setPeopleNum(3);
-            }
-            break;
-            case R.id.rl_people4: {
-                setPeopleNum(4);
-            }
-            break;
-            case R.id.single_random: {
-                SingleRandomActivity.gotoSingleRandomActivity(this);
+                newNumber();
             }
             break;
         }
-    }
-
-    private void setPeopleNum(int i) {
-        SPUtil.setPeopleNum(this, i);
-        mIntCurrentPeopleNum = i;
-        setPeopleCb();
-    }
-
-    private void setPeopleCb() {
-        mCbPeople3.setChecked(mIntCurrentPeopleNum == 3);
-        mCbPeople4.setChecked(mIntCurrentPeopleNum == 4);
-    }
-
-    private void setTimer(int timer) {
-        mIntTimer = timer;
-//        mIntCurrentTimer.set(timer);
-        SPUtil.setTimer(this, timer);
-    }
-
-    private void resetGame() {
-        mListNumberCount.clear();
-        mListNumbers.clear();
-        for (int i = 2; i < 13; ++i) {
-            mListNumberCount.add(new Number(0, "点数 " + i));
-        }
-        mTvNumber.animateText("");
-        setPieData();
-//        setLineData();
-        customDrawerLayout.closeDrawer(GravityCompat.START);
-        mListLastReadyNums.clear();
-        mIntReadyNum = 0;
-        synchronized (mThreadTimer) {
-            mIntCurrentTimer.set(0);
-            mThreadTimer.notifyAll();
-        }
-    }
-
-    private void readyNumber() {
-        mIntNumber = Util.getNewNo();
-        while (mListLastReadyNums.contains(mIntNumber)) {
-            mIntNumber = Util.getNewNo();
-        }
-        mListLastReadyNums.add(mIntNumber);
-        mTvNumber.animateText(mIntNumber + "点");
-        mSoundPool.play(mIntNumber - 1, 1, 1, 0, 0, 1);
     }
 
     private void newNumber() {
-        synchronized (mThreadTimer) {
-            mIntCurrentTimer.set(mIntTimer + 1);
-            mThreadTimer.notifyAll();
-        }
-        mIntNumber = Util.getNewNo();
-        mListNumberCount.get(mIntNumber - 2).num++;
+        mIntNumber = Util.getSingleRandom();
+        mListNumberCount.get(mIntNumber - 1).num++;
         mListNumbers.add(mIntNumber);
         setPieData();
         setBarData();
         setLineData();
-        mSoundPool.play(mIntNumber - 1, 1, 1, 0, 0, 1);
+        mTvNumber.animateText(String.valueOf(mIntNumber));
+//        mSoundPool.play(mIntNumber - 1, 1, 1, 0, 0, 1);
     }
 
-    private void setTvNumber() {
-        synchronized (mThreadTimer) {
-            mTvNumber.animateText(mIntNumber + "点(" + mIntCurrentTimer + ")");
-        }
-    }
+    @Override
+    public void onPointerCaptureChanged(boolean hasCapture) {
 
-    private boolean isOnReady() {
-        return mIntReadyNum++ < mIntCurrentPeopleNum;
-    }
-
-    private void refreshDrawerState() {
-        this.direction = customDrawerLayout.isDrawerOpen(GravityCompat.START);
-    }
-
-    private static MaterialMenuDrawable getMaterialMenu(Toolbar toolbar) {
-        return (MaterialMenuDrawable) toolbar.getNavigationIcon();
     }
 
     @Override

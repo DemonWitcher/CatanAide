@@ -162,6 +162,18 @@
             </LinearLayout>
 
             <com.gc.materialdesign.views.ButtonRectangle
+                android:id="@+id/single_random"
+                android:layout_width="150dp"
+                android:layout_height="wrap_content"
+                android:layout_alignParentBottom="true"
+                android:layout_centerHorizontal="true"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginBottom="90dp"
+                android:layout_marginTop="20dp"
+                android:background="@color/colorAccent"
+                android:text="单筛子" />
+
+            <com.gc.materialdesign.views.ButtonRectangle
                 android:id="@+id/reset"
                 android:layout_width="150dp"
                 android:layout_height="wrap_content"

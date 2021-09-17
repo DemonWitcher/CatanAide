@@ -10,14 +10,21 @@ import java.util.Random;
 
 public class Util {
 
-    public static int getNewNo(){
+    public static int getNewNo() {
         Random random = new Random();
-        return random.nextInt(6)+random.nextInt(6)+2;
+        return random.nextInt(6) + random.nextInt(6) + 2;
     }
+
+    public static int getSingleRandom() {
+        Random random = new Random();
+        return random.nextInt(6) + 1;
+    }
+
     public static int px2sp(Context context, float pxValue) {
         final float fontScale = context.getResources().getDisplayMetrics().scaledDensity;
         return (int) (pxValue / fontScale + 0.5f);
     }
+
     public static int sp2px(Context context, float spValue) {
         final float fontScale = context.getResources().getDisplayMetrics().scaledDensity;
         return (int) (spValue * fontScale + 0.5f);
